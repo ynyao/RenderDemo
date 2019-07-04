@@ -1,10 +1,15 @@
-package com.zcy.renderdemo.gles
+package com.zcy.renderdemo.render
+
+import com.zcy.renderdemo.gles.FullFrameRect
+import com.zcy.renderdemo.gles.GLMatrixUtil
+import com.zcy.renderdemo.gles.GlUtil
+import com.zcy.renderdemo.gles.Texture2dProgram
 
 class TextureRender {
 
     private val TAG = "TextureRender"
 
-    private var program2D: Texture2dProgram ? = null
+    private var program2D: Texture2dProgram? = null
     private var greenscreenProgram: Texture2dProgram? = null
     private var mFullScreen: FullFrameRect? = null
     private var mWidth: Float = 0f
@@ -15,13 +20,15 @@ class TextureRender {
     private val glMatrixUtil = GLMatrixUtil()
 
     init {
-        program2D = Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_2D)
+        program2D =
+                Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_2D)
         mFullScreen = FullFrameRect(program2D!!)
     }
 
     private fun createGreenscreenProgram(){
         if(greenscreenProgram == null){
-            greenscreenProgram = Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_GREENSCREEN)
+            greenscreenProgram =
+                    Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_GREENSCREEN)
         }
     }
 
@@ -55,7 +62,9 @@ class TextureRender {
     fun drawTexture(textureId: Int, projectionMatrix: FloatArray){
         glMatrixUtil.setPosition(mPosX, mPosY)
         glMatrixUtil.setScale(mWidth/2, mHeight/2)
-        mFullScreen?.drawFrame(textureId, glMatrixUtil.generateMVPMatrix(projectionMatrix), GlUtil.IDENTITY_MATRIX)
+        mFullScreen?.drawFrame(textureId, glMatrixUtil.generateMVPMatrix(projectionMatrix),
+            GlUtil.IDENTITY_MATRIX
+        )
         GlUtil.checkGlError("hw draw done")
     }
 

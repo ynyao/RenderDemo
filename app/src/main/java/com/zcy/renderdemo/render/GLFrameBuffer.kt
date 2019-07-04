@@ -1,4 +1,4 @@
-package com.zcy.renderdemo.gles
+package com.zcy.renderdemo.render
 
 class GLFrameBuffer {
 

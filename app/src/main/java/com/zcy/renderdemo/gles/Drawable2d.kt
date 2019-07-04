@@ -159,10 +159,16 @@ open class Drawable2d
                 0.5f, -0.5f, // 1 bottom right
                 -0.5f, 0.5f, // 2 top left
                 0.5f, 0.5f)// 3 top right
-        private val RECTANGLE_TEX_COORDS = floatArrayOf(0.0f, 1.0f, // 0 bottom left
-                1.0f, 1.0f, // 1 bottom right
-                0.0f, 0.0f, // 2 top left
-                1.0f, 0.0f      // 3 top right
+//        private val RECTANGLE_TEX_COORDS = floatArrayOf(0.0f, 1.0f, // 0 bottom left
+//                1.0f, 1.0f, // 1 bottom right
+//                0.0f, 0.0f, // 2 top left
+//                1.0f, 0.0f      // 3 top right
+//        )
+
+        private val RECTANGLE_TEX_COORDS = floatArrayOf(1.0f, 1.0f, // 0 bottom left
+            1.0f, 0.0f, // 1 bottom right
+            0.0f, 1.0f, // 2 top left
+            0.0f, 0.0f      // 3 top right
         )
         private val RECTANGLE_TEX_CROP_COORDS = floatArrayOf(0.0f, 500.0f/576.0f, // 0 bottom left
                 1.0f, 500.0f/576.0f, // 1 bottom right

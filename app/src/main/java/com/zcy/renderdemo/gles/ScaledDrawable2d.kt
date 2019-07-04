@@ -5,7 +5,7 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 
 /**
- * Created by quqiuzhu on 30/08/2017.
+ *
  */
 
 class ScaledDrawable2d (shape: Drawable2d.Prefab) : Drawable2d(shape) {

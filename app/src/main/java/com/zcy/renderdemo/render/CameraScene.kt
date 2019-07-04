@@ -1,4 +1,4 @@
-package com.zcy.renderdemo.gles
+package com.zcy.renderdemo.render
 
 import android.annotation.SuppressLint
 import android.graphics.SurfaceTexture
@@ -6,10 +6,16 @@ import android.opengl.EGLContext
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
-import android.os.Message
 import android.util.Log
+import com.zcy.renderdemo.gles.EglCore
+import com.zcy.renderdemo.gles.GlUtil
+import com.zcy.renderdemo.gles.OffscreenSurface
 import java.util.*
 
+/**
+ * 主显示区域画面
+ *
+ */
 class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailableListener  {
 
     private var mEglCore: EglCore? = null
@@ -23,38 +29,38 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
     }
 
 
-    override fun onLooperPrepared() {
-        super.onLooperPrepared()
-        handler = object : Handler(looper) {
-            override fun handleMessage(msg: Message?) {
-                super.handleMessage(msg)
-                val what = msg?.what
-
-                when (what) {
-                    MSG_OPEN_CAMERA -> {
-                        val streamId = msg.obj as Int
-                        val log = "open camera $streamId"
-                    }
-
-                    MSG_CLOSE_CAMERA -> {
-                        val log = "close stream ${msg.arg1}"
-                    }
-
-                    MSG_QUIT -> {
-                        handler?.removeCallbacksAndMessages(null)
-                        release()
-                        quitSafely()
-                        handler = null
-                        val log = "camera scene thread stop................"
-                    }
-                }
-
-            }
-        }
-        mEglCore = EglCore(shareContext, EglCore.FLAG_RECORDABLE)
-        mOffscreenSurface = OffscreenSurface(mEglCore!!, 1, 1)
-        mOffscreenSurface!!.makeCurrent()
-    }
+//    override fun onLooperPrepared() {
+//        super.onLooperPrepared()
+//        handler = object : Handler(looper) {
+//            override fun handleMessage(msg: Message?) {
+//                super.handleMessage(msg)
+//                val what = msg?.what
+//
+//                when (what) {
+//                    MSG_OPEN_CAMERA -> {
+//                        val streamId = msg.obj as Int
+//                        val log = "open camera $streamId"
+//                    }
+//
+//                    MSG_CLOSE_CAMERA -> {
+//                        val log = "close stream ${msg.arg1}"
+//                    }
+//
+//                    MSG_QUIT -> {
+//                        handler?.removeCallbacksAndMessages(null)
+//                        release()
+//                        quitSafely()
+//                        handler = null
+//                        val log = "camera scene thread stop................"
+//                    }
+//                }
+//
+//            }
+//        }
+//        mEglCore = EglCore(shareContext, EglCore.FLAG_RECORDABLE)
+//        mOffscreenSurface = OffscreenSurface(mEglCore!!, 1, 1)
+//        mOffscreenSurface!!.makeCurrent()
+//    }
 
     @Synchronized
     fun prepareGl(): Boolean {
@@ -82,7 +88,7 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
     ): Long {
         val renderUtil = renderMap[Looper.myLooper()]
         renderUtil?.setSceneViewPort(sceneWidth, sceneHeight)
-        var textureId = textureMap[streamId] ?: return 0
+        var textureId = textureIdMap[streamId] ?: return 0
         var w = sceneWidth
         var h = sceneHeight
         renderUtil?.drawStreamScene(
@@ -97,20 +103,24 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
     }
 
     override fun onFrameAvailable(surfaceTexture: SurfaceTexture?) {
-        if (surfaceTexture == surfaceTex)
-            surfaceTexture?.updateTexImage()
+        textureMap.forEach { id, texture ->
+            if(texture==surfaceTexture){
+                surfaceTexture?.updateTexImage()
+            }
+        }
     }
 
-    var surfaceTex: SurfaceTexture? = null
 
     @SuppressLint("UseSparseArrays")
-    var textureMap = HashMap<Int, Int>()//id,textureid   camId 0
+    var textureIdMap = HashMap<Int, Int>()//id,textureid   camId 0
+    var textureMap = HashMap<Int, SurfaceTexture>()
+    var i=0
 
-    fun generateCamTexture(): SurfaceTexture {
+    fun generateTexture(streamId: Int): SurfaceTexture {
         var textureId = GlUtil.createTextureObject()
         var sft = SurfaceTexture(textureId)
-        surfaceTex = sft
-        textureMap[0] = textureId
+        textureMap[streamId] = sft
+        textureIdMap[streamId] = textureId
         sft.setOnFrameAvailableListener(this)
         return sft
     }
@@ -136,9 +146,6 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
         mEglCore?.release()
     }
 
-    fun sendOpenCamera(streamId: Int, width: Int, height: Int) {
-            handler?.obtainMessage(MSG_OPEN_CAMERA, width, height, streamId)?.sendToTarget()
-    }
 
     companion object {
         val TAG = "SceneRender"

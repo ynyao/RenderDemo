@@ -23,6 +23,7 @@ import android.opengl.GLES20
 import android.opengl.GLES30
 import android.opengl.Matrix
 import android.util.Log
+import com.zcy.renderdemo.render.GLFrameBuffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
@@ -262,7 +263,7 @@ object GlUtil {
         return fb
     }
 
-    fun prepareFrameBuffer(w: Int = 1920, h: Int = 1080): GLFrameBuffer{
+    fun prepareFrameBuffer(w: Int = 1080, h: Int = 1920): GLFrameBuffer {
         val fbo = GLFrameBuffer()
         val values = IntArray(1)
         GLES30.glGenTextures(1, values, 0)

@@ -3,36 +3,71 @@ package com.zcy.renderdemo
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.support.v4.app.ActivityCompat
-import android.support.v4.content.ContextCompat
-import android.support.v7.app.AppCompatActivity
+import android.view.TextureView
+import android.view.View
+import android.widget.FrameLayout
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.zcy.renderdemo.mediator.Director
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
 
+    var director: Director? = null
+    var hasPermission = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        director = Director(this)
+        director?.setNavi(cl_navi)
+        fl_main_preview.addView(
+            director?.windowsScene?.getCameraView(),
+            0,
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        )
         permissioncheck()
+    }
 
+    fun addCameraStream(v: View) {
+        if (hasPermission)
+            director?.addCameraStream()
+        else
+            Toast.makeText(this, "无相机权限", Toast.LENGTH_LONG).show()
+    }
+
+    fun addLocalStream(v: View) {
+        director?.addLocalStream()
+    }
+
+    fun switchStream(v: View) {
+        director?.switchStream()
+    }
+
+    override fun onResume() {
+        super.onResume()
     }
 
     private fun permissioncheck() {
         if (!checkPermissionAllGranted(
                 arrayOf<String>(
                     Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,Manifest.permission.CAMERA
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA
                 )
             )
         ) {
             ActivityCompat.requestPermissions(
                 this,
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
-                ,Manifest.permission.CAMERA),
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    , Manifest.permission.CAMERA
+                ),
                 1
             )
-        }else{
-            CamManager(this)
+        } else {
+            hasPermission = true
         }
     }
 
@@ -47,8 +82,13 @@ class MainActivity : AppCompatActivity() {
                     return
                 }
             }
-            CamManager(this)
+            hasPermission = true
         }
+    }
+
+    var preview: TextureView? = null
+    private fun init() {
+
     }
 
 

@@ -1,25 +1,23 @@
 package com.zcy.renderdemo
 
 import android.Manifest
-import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.os.Handler
 import android.os.HandlerThread
-import android.support.v4.app.ActivityCompat
 import android.util.Log
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
-import com.zcy.renderdemo.gles.RenderThread2
+import androidx.core.app.ActivityCompat
+import com.zcy.renderdemo.render.RenderThread
 import java.util.*
 
-class CamManager(internal var context: Activity) {
+class CamManager(renThread: RenderThread) {
 
-    internal var previewWidth = 1080
-    internal var previewHeight = 1920
+    internal var previewWidth = 2160
+    internal var previewHeight = 1080
     internal lateinit var textureView: TextureView
     /**
      * An additional thread for running tasks that shouldn't block the UI.
@@ -31,62 +29,34 @@ class CamManager(internal var context: Activity) {
      */
     private var mBackgroundHandler: Handler? = null
 
-    var isFirst=true;
     internal var time = System.currentTimeMillis()
-    internal var textureListener: TextureView.SurfaceTextureListener = object : TextureView.SurfaceTextureListener {
-        override fun onSurfaceTextureAvailable(surface: SurfaceTexture, width: Int, height: Int) {
-            //当SurefaceTexture可用的时候，设置相机参数并打开相机
-            renderThread?.sendSurfaceAvailable(surface,width,height)
 
-            doOpenCamera()
-        }
-
-        override fun onSurfaceTextureSizeChanged(surface: SurfaceTexture, width: Int, height: Int) {
-
-        }
-
-        override fun onSurfaceTextureDestroyed(surface: SurfaceTexture): Boolean {
-            return false
-        }
-
-        override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-            Log.i("delta time", "delta :" + (System.currentTimeMillis() - time))
-            time = System.currentTimeMillis()
-        }
-    }
-
-    var renderThread:RenderThread2 ?=null
+    var renderThread: RenderThread?=null
+    var context:Context?=null
     init {
-        renderThread= RenderThread2()
-        renderThread!!.start()
-        initView()
+        renderThread=renThread
+        context=App.getContext()
         openCam()
     }
-
-
 
     private fun openCam() {
         mBackgroundThread = HandlerThread("CameraBackground")
         mBackgroundThread!!.start()
         mBackgroundHandler = Handler(mBackgroundThread!!.looper)
-
+        doOpenCamera()
     }
 
-    private fun initView() {
-        textureView = context.findViewById(R.id.ttv_preview)
-        textureView.surfaceTextureListener = textureListener
-
-    }
 
     private fun doOpenCamera() {
-        val manager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val manager = context?.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         try {
             val cameraId = manager.cameraIdList[0]//这个可能会有很多个，但是通常都是两个，第一个是后置，第二个是前置；
             val characteristics = manager.getCameraCharacteristics(cameraId)
             val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)!!
 //mPreviewSize = map.getOutputSizes(SurfaceTexture.class)[0];
+            var cOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);//获取相机角度
             if (ActivityCompat.checkSelfPermission(
-                    context,
+                    context!!,
                     Manifest.permission.CAMERA
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
@@ -129,12 +99,11 @@ class CamManager(internal var context: Activity) {
                 return
             }
             //            setUpImageReader();
-            val captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
+            val captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
 
-            val sft = renderThread?.cameraScene?.generateCamTexture()//textureView.surfaceTexture
+            val sft = renderThread?.cameraScene?.generateTexture(0)//textureView.surfaceTexture
             sft?.setDefaultBufferSize(previewWidth, previewHeight)
             val textureSurface = Surface(sft)
-
 
             //            Surface imageSurface = imageReader.getSurface();
             captureRequestBuilder.addTarget(textureSurface)

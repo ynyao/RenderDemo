@@ -1,4 +1,4 @@
-package com.zcy.renderdemo.gles
+package com.zcy.renderdemo.render
 
 import android.graphics.SurfaceTexture
 import android.opengl.EGLContext
@@ -8,11 +8,23 @@ import android.opengl.Matrix
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Message
+import android.util.Log
+import com.zcy.renderdemo.CamManager
+import com.zcy.renderdemo.LocalVideoManager
+import com.zcy.renderdemo.gles.EglCore
+import com.zcy.renderdemo.gles.GlUtil
+import com.zcy.renderdemo.gles.WindowSurface
+import com.zcy.renderdemo.mediator.Mediator
 import com.zcy.renderdemo.utils.L
 
-class RenderThread2 : HandlerThread("RenderThread"){
+/**
+ * 渲染线程，绘制主画面和各种副画面
+ *
+ */
+class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
 
-    var cameraScene:CameraScene ?= null
+    var cameraScene: CameraScene?= null
+    var mediator: Mediator? = mediator
 
     var handler: Handler? = null
     private var mEglCore: EglCore? = null
@@ -24,18 +36,35 @@ class RenderThread2 : HandlerThread("RenderThread"){
 
     var mWindowSurfaceWidth = 1080
     var mWindowSurfaceHeight = 1920
+    var surfaceState=0x00
+    var camSurfaceAvailable=0x01
+    var subSurfaceAvailable=0x10
 
     fun sendSurfaceAvailable(holder: SurfaceTexture?, width: Int, height: Int) {
+        surfaceState = surfaceState or camSurfaceAvailable
         handler?.sendMessage(handler?.obtainMessage(MSG_SURFACE_AVAILABLE, width, height, holder))
     }
 
+    fun sendSurfaceAvailable(sceneId:Int,holder: SurfaceTexture?, width: Int, height: Int) {
+        surfaceState = surfaceState or subSurfaceAvailable
+        handler?.sendMessage(handler?.obtainMessage(MSG_SUB_SURFACE_AVAILABLE, width, height, holder))
+        if(surfaceState== 0x11)
+            handler?.sendMessage(handler?.obtainMessage(MSG_REDRAW, timestamp))
+    }
+
+    var streamList=ArrayList<Int>()
+    var currentStream=0
     // Orthographic projection matrix.
     private val mDisplayProjectionMatrix = FloatArray(16)
     private var startTime = 0L
 
     private var mWindowSurface: WindowSurface? = null
+    var subSceneRender: ShareStreamRender? = null
+    var sceneSurfaceRender: SceneSurfaceRender? = null
 
-
+    init {
+        sceneSurfaceRender = SceneSurfaceRender(this)
+    }
 
     @Volatile
     private var timestamp = 0L
@@ -49,35 +78,16 @@ class RenderThread2 : HandlerThread("RenderThread"){
 
                 when (what) {
                     MSG_SURFACE_AVAILABLE -> surfaceAvailable(msg.obj as SurfaceTexture, msg.arg1, msg.arg2)
+                    MSG_SUB_SURFACE_AVAILABLE -> subsurfaceAvailable(msg.obj as SurfaceTexture, msg.arg1, msg.arg2)
+                    MSG_OPEN_CAM ->CamManager(this@RenderThread)
+                    MSG_OPEN_LOCAL_STREAM -> LocalVideoManager(this@RenderThread)
                     MSG_REDRAW -> {
-//                        if (mSurfaceDestoryed) {
-//                            return
-//                        }
                         val current = System.currentTimeMillis()
                         if (current - startTime >= 1 * 1000) {
                             startTime = current
-//                            L.d("testPublish",    "preview  drop fps ${dropFps.fps}  drop   total fps   ${dropFps.totalFps}   ")
-                            //   L.d("testPublish",    "preview  fps ${fpsCounter.fps}    total fps   ${fpsCounter.totalFps}   ")
-//                            dropFps.reset()
-//                            if (fpsCounter.totalFps > 35) {
-//                                drawInternal += 2
-//                            }
-//                            if (fpsCounter.totalFps < 30) {
-//                                drawInternal -= 10
-//                                if (drawInternal < 0) {
-//                                    drawInternal = 0
-//                                }
-//                            }
-//                            fpsCounter.reset()
                         }
-//                        if(fpsControl.isDropFrame()){
-//                            dropFps.count()
-//                            dropFps.update()
-//                            return
-//                        }
-//                        draw(timestamp)
                         draw(System.currentTimeMillis())
-//                        subSceneRender.drawSubScene()
+                        subSceneRender?.drawSubScene()
 
                         sendEmptyMessageDelayed(MSG_REDRAW, drawInternal)
                     }
@@ -90,34 +100,28 @@ class RenderThread2 : HandlerThread("RenderThread"){
         mEglCore?.makeCurrent(null, null)
         mTextureRender = TextureRender()
         mOverlayManager = OverlayManager(mWindowSurfaceWidth, mWindowSurfaceHeight)
-        mainFrameBuffer = GlUtil.prepareFrameBuffer()
+        mainFrameBuffer = GlUtil.prepareFrameBuffer(1080, 2160)
+
         cameraScene= CameraScene()
         cameraScene?.prepareGl()
         cameraScene?.setShareEglContext(shareEglContext())
         cameraScene?.start()
 
+        subSceneRender = ShareStreamRender(this)
+        subSceneRender?.prepareLooper(looper,mEglCore!!)
     }
-
 
 
     fun shareEglContext(): EGLContext {
         return mEglCore!!.shareContext()
     }
 
-
-
-
     /**
      * Draws the hdmiScene and submits the buffer.
      */
     private fun draw(time: Long) {
-//        if (mSurfaceDestoryed || mDestroyed) {
-//            return
-//        }
         val t1 = System.currentTimeMillis()
         GlUtil.checkGlError("draw start")
-//        GLES30.glClearColor(0.165f, 0.192f, 0.231f, 1.0f)
-//        GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
 
         var drawLiveBuffer = false
         drawMainTexture(drawLiveBuffer)
@@ -131,25 +135,8 @@ class RenderThread2 : HandlerThread("RenderThread"){
         if (!swap) {
             L.e(TAG, "preview render swap buffer failed ")
             GlUtil.checkGlError("preview render swap buffer failed")
-//            mSurfaceDestoryed = true
             return
         }
-//        recorder!!.setMainTexture(mainFrameBuffer!!.frameBufferTextureId)
-//        recorder!!.frameAvailable()
-//        if (mEncoding) {
-//            if (timestamp == -1L) {
-//                // Seeing this after device is toggled off/on with power button.  The
-//                // first frame back has a zero timestamp.
-//                //
-//                // MPEG4Writer thinks this is cause to abort() in native code, so it's very
-//                // important that we just ignore the frame.
-//                L.w(TAG, "HEY: got SurfaceTexture with timestamp of zero")
-//                return
-//            }
-////                val transform = FloatArray(16)      // TODO - avoid alloc every frame
-//            L.d("tetVideoEncode", "hwVideoEncoder  frameAvailable() ")
-//            hwVideoEncoder.frameAvailable()
-//        }
         val t4 = System.currentTimeMillis()
         val d3 = t4 - t1
 
@@ -162,18 +149,12 @@ class RenderThread2 : HandlerThread("RenderThread"){
 
         GLES30.glClearColor(0.176f, 0.184f, 0.2f, 1.0f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
-//        sceneRender.setSceneViewPort(VideoSource.srcWidth, VideoSource.srcHeight)
-        cameraScene?.drawStreamScene(mWindowSurfaceWidth, mWindowSurfaceHeight, 0, null, false, 0f, 0f, mDisplayProjectionMatrix, true)
+        cameraScene?.drawStreamScene(mWindowSurfaceWidth, mWindowSurfaceHeight, currentStream, null, false, 0f, 0f, mDisplayProjectionMatrix, true)
         drawExtra()
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
     }
 
-
-
     private fun drawExtra() {
-//        if (mShowPip && !mHidePip) {
-//            drawPip(pipPreviewSource)
-//        }
 
         //绘制贴纸列表
 //        mOverlayManager!!.drawOverlaysWithoutHide(mDisplayProjectionMatrix)
@@ -189,22 +170,23 @@ class RenderThread2 : HandlerThread("RenderThread"){
         if (mWindowSurface != null) {
             mWindowSurface?.release()
         }
-//        var textureId = GlUtil.createTextureObject()
-//        var sft = SurfaceTexture(textureId)
-//        sft.setOnFrameAvailableListener(this)
         mWindowSurface = WindowSurface(mEglCore!!, surfaceTexture!!)
         mWindowSurface!!.makeCurrent()
 
-        mWindowSurfaceWidth = width
-        mWindowSurfaceHeight = height
+        mWindowSurfaceWidth = 1080 //width//width/3*4
+        mWindowSurfaceHeight =1810 //height
+        Log.i(TAG, "width:$mWindowSurfaceWidth height:$mWindowSurfaceHeight")
 
         GLES30.glViewport(0, 0, mWindowSurfaceWidth, mWindowSurfaceHeight)
 
-        Matrix.orthoM(mDisplayProjectionMatrix, 0, 0f, 1080.toFloat(), 0f, 1920.toFloat(), -1f, 1f)
-//        startEncoderThread()
-//        recorder?.startThread(mEglCore!!.shareContext())
+        Matrix.orthoM(mDisplayProjectionMatrix, 0, 0f, mWindowSurfaceWidth*1.0f, 0f, mWindowSurfaceHeight*1.0f, -1f, 1f)
+        if(surfaceState== 0x11)
         handler?.sendMessage(handler?.obtainMessage(MSG_REDRAW, timestamp))
 
+    }
+
+    private fun subsurfaceAvailable(surfaceTexture: SurfaceTexture?, width: Int, height: Int) {
+        sceneSurfaceRender?.initSubScene(surfaceTexture,width,height)
     }
 
 
@@ -212,7 +194,10 @@ class RenderThread2 : HandlerThread("RenderThread"){
         public val TAG = "RenderThread"
         // Messages
         private val MSG_SURFACE_AVAILABLE = 0
+        private val MSG_SUB_SURFACE_AVAILABLE = 1
+        private val MSG_OPEN_CAM=2
         private val MSG_REDRAW = 3
+        private val MSG_OPEN_LOCAL_STREAM=4
     }
 
     /**
@@ -242,6 +227,22 @@ class RenderThread2 : HandlerThread("RenderThread"){
         GlUtil.checkGlError("releaseGl done")
 
         mEglCore!!.makeNothingCurrent()
+    }
+
+    fun switchStream() {
+        currentStream=(currentStream+1) % streamList.size
+    }
+
+    fun openCam() {
+        handler?.sendMessage(handler?.obtainMessage(MSG_OPEN_CAM))
+        streamList?.add(0)
+        currentStream=0
+    }
+
+    fun openLocalStream(){
+        handler?.sendMessage(handler?.obtainMessage(MSG_OPEN_LOCAL_STREAM))
+        streamList?.add(1)
+        currentStream=1
     }
 
 

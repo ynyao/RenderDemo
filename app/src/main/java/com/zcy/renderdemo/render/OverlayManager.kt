@@ -1,8 +1,9 @@
-package com.zcy.renderdemo.gles
+package com.zcy.renderdemo.render
 
 import android.graphics.BitmapFactory
 import com.zcy.renderdemo.App
 import com.zcy.renderdemo.R
+import com.zcy.renderdemo.gles.*
 
 class OverlayManager(private var width: Int, private var height: Int)  {
 
@@ -41,9 +42,11 @@ class OverlayManager(private var width: Int, private var height: Int)  {
         }
 
     }
-    private val overlayRender = Sprite2d(ScaledDrawable2d(Drawable2d.Prefab.RECTANGLE))
+    private val overlayRender =
+        Sprite2d(ScaledDrawable2d(Drawable2d.Prefab.RECTANGLE))
 
-    private var program2D = Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_2D)
+    private var program2D =
+        Texture2dProgram(Texture2dProgram.ProgramType.TEXTURE_2D)
 
     fun drawOverlay( matrix: FloatArray){
 //        Log.d("OVERLAY", "draw overlay texture id : " + overlay.textureId+"overlay.cx: "+overlay.cx+ "overlay.cy" +overlay.cy
