@@ -18,13 +18,12 @@ import com.zcy.renderdemo.mediator.Mediator
 import com.zcy.renderdemo.utils.L
 
 /**
- * 渲染线程，绘制主画面和各种副画面
+ *Rendering threads, drawing main and sub-displays
  *
  */
 class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
 
-    var cameraScene: CameraScene?= null
-    var mediator: Mediator? = mediator
+    var mainDisplay: MainDisplay?= null
 
     var handler: Handler? = null
     private var mEglCore: EglCore? = null
@@ -102,10 +101,10 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
         mOverlayManager = OverlayManager(mWindowSurfaceWidth, mWindowSurfaceHeight)
         mainFrameBuffer = GlUtil.prepareFrameBuffer(1080, 2160)
 
-        cameraScene= CameraScene()
-        cameraScene?.prepareGl()
-        cameraScene?.setShareEglContext(shareEglContext())
-        cameraScene?.start()
+        mainDisplay= MainDisplay()
+        mainDisplay?.prepareGl()
+        mainDisplay?.setShareEglContext(shareEglContext())
+        mainDisplay?.start()
 
         subSceneRender = ShareStreamRender(this)
         subSceneRender?.prepareLooper(looper,mEglCore!!)
@@ -149,7 +148,7 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
 
         GLES30.glClearColor(0.176f, 0.184f, 0.2f, 1.0f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
-        cameraScene?.drawStreamScene(mWindowSurfaceWidth, mWindowSurfaceHeight, currentStream, null, false, 0f, 0f, mDisplayProjectionMatrix, true)
+        mainDisplay?.drawStreamScene(mWindowSurfaceWidth, mWindowSurfaceHeight, currentStream, null, false, 0f, 0f, mDisplayProjectionMatrix, true)
         drawExtra()
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
     }

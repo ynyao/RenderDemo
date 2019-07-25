@@ -9,7 +9,7 @@ import kotlinx.android.synthetic.main.activity_main.view.*
 
 
 /**
- * 导航区域添加流 切换等功能
+ * Navigation Area ,Added Stream ,Switching Functions
  */
 class NaviController(private val naviLayout: View, private val director : Director):Colleague(director){
     var sceneRender: SceneSurfaceRender?=null
@@ -48,6 +48,9 @@ class NaviController(private val naviLayout: View, private val director : Direct
         return generateDirectRect(v, vl, vt)
     }
 
+    /**
+     *  Generate the Rect of the Views in the window
+     */
     private fun generateDirectRect(v: View, l: Int, t: Int): Rect {
         val rect =Rect(v.left,v.top,v.right,v.bottom)
         rect.left += l

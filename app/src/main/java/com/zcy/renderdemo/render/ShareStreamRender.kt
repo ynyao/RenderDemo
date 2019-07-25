@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
 
 /**
- * 初始化设置第二显示区域画面的状态
- * @property sceneRender CameraScene
+ * init sub-display state
+ * @property sceneRender mainDisplay
  */
 class ShareStreamRender(private val renderThread: RenderThread) :
     Runnable /*(private var shareContext: EGLContext)*//* : HandlerThread("ShareStreamRender")*/ {
@@ -51,7 +51,8 @@ class ShareStreamRender(private val renderThread: RenderThread) :
     }
 
     /**
-     * 注册副显示区域 可以有多个副显示区域 投屏 ，副显示区 ，选择区等
+     *  Registered sub-display area，which can have multiple sub-display areas such as projection,
+     *  sub-display area, selection area, etc.
      * @return Int
      */
     fun registerSubScene(): Int {
@@ -73,7 +74,7 @@ class ShareStreamRender(private val renderThread: RenderThread) :
 
     /**
      *
-     * 初始化副显示区域
+     * init sub-display areas
      * @param info SurfaceInfo
      * @param sceneId Int
      */
@@ -152,7 +153,7 @@ class ShareStreamRender(private val renderThread: RenderThread) :
                             val w = it.rect.width().toFloat()
                             val h = it.rect.height().toFloat()
                             val r = SceneRenderUtil.RenderRect(w, h, cx, cy)
-                            renderThread?.cameraScene?.drawStreamScene(
+                            renderThread?.mainDisplay?.drawStreamScene(
                                 surfaceInfo.width,
                                 surfaceInfo.height,
                                 it.streamId,
@@ -162,10 +163,10 @@ class ShareStreamRender(private val renderThread: RenderThread) :
                                 filter.similarity,
                                 scene.projectionMatrix
                             )
-                            //                                mTextureRender!!.setRegin(cx, cy, w, h)
+                            //                       cameraScene         mTextureRender!!.setRegin(cx, cy, w, h)
                             //                                mTextureRender!!.drawTexture(it.textureId, scene.projectionMatrix)
                         } else {
-                            renderThread?.cameraScene?.drawStreamScene(
+                            renderThread?.mainDisplay?.drawStreamScene(
                                 surfaceInfo.width,
                                 surfaceInfo.height,
                                 it.streamId,

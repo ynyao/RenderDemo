@@ -13,10 +13,10 @@ import com.zcy.renderdemo.gles.OffscreenSurface
 import java.util.*
 
 /**
- * 主显示区域画面
+ * mainview
  *
  */
-class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailableListener  {
+class MainDisplay: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailableListener  {
 
     private var mEglCore: EglCore? = null
     private var shareContext: EGLContext? = null
@@ -29,38 +29,6 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
     }
 
 
-//    override fun onLooperPrepared() {
-//        super.onLooperPrepared()
-//        handler = object : Handler(looper) {
-//            override fun handleMessage(msg: Message?) {
-//                super.handleMessage(msg)
-//                val what = msg?.what
-//
-//                when (what) {
-//                    MSG_OPEN_CAMERA -> {
-//                        val streamId = msg.obj as Int
-//                        val log = "open camera $streamId"
-//                    }
-//
-//                    MSG_CLOSE_CAMERA -> {
-//                        val log = "close stream ${msg.arg1}"
-//                    }
-//
-//                    MSG_QUIT -> {
-//                        handler?.removeCallbacksAndMessages(null)
-//                        release()
-//                        quitSafely()
-//                        handler = null
-//                        val log = "camera scene thread stop................"
-//                    }
-//                }
-//
-//            }
-//        }
-//        mEglCore = EglCore(shareContext, EglCore.FLAG_RECORDABLE)
-//        mOffscreenSurface = OffscreenSurface(mEglCore!!, 1, 1)
-//        mOffscreenSurface!!.makeCurrent()
-//    }
 
     @Synchronized
     fun prepareGl(): Boolean {
@@ -72,7 +40,6 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
         render.initGL()
         renderMap[Looper.myLooper()] = render
         return true
-//        glInitializer = true
     }
 
     fun drawStreamScene(
@@ -127,7 +94,6 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
 
     private fun release() {
         Log.d("RELEASE_LEAK", "camera scene release")
-//        closePdf()
 //        for(i in 0 until cameraScenes.size) {
 //            val it = cameraScenes[i]
 //            it ?: continue
@@ -135,14 +101,11 @@ class CameraScene: HandlerThread("camera_scene"), SurfaceTexture.OnFrameAvailabl
 //        }
 //        cameraScenes.clear()
 //
-//        mDestroyed = true
 //
         if (mOffscreenSurface != null) {
             mOffscreenSurface!!.release()
             mOffscreenSurface = null
         }
-//        mPdfProgram?.release()
-//        mPdfProgram = null
         mEglCore?.release()
     }
 

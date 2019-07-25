@@ -40,7 +40,6 @@ class WindowsScene(context: Context, private val director: Director) :Colleague(
         }
 
         override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
-//            renderThread?.sendSurfaceAvailable(surface,width,height)
             director.renderThread?.sendSurfaceAvailable(surface,width,height)
             L.i("onSurfaceTextureAvailable","windowsScene available")
         }

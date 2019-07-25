@@ -84,7 +84,7 @@ class CamManager(renThread: RenderThread) {
                     Log.e(TAG, "onError -> $error")
                     camera.close()
                 }
-            }, renderThread?.cameraScene?.handler)//这个指定其后台运行，如果直接UI线程也可以，直接填null；
+            }, renderThread?.mainDisplay?.handler)//这个指定其后台运行，如果直接UI线程也可以，直接填null；
             Log.i(TAG, "open Camera $cameraId")
         } catch (e: CameraAccessException) {
             e.printStackTrace()
@@ -101,7 +101,7 @@ class CamManager(renThread: RenderThread) {
             //            setUpImageReader();
             val captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
 
-            val sft = renderThread?.cameraScene?.generateTexture(0)//textureView.surfaceTexture
+            val sft = renderThread?.mainDisplay?.generateTexture(0)//textureView.surfaceTexture
             sft?.setDefaultBufferSize(previewWidth, previewHeight)
             val textureSurface = Surface(sft)
 
