@@ -1,8 +1,11 @@
 package com.zcy.renderdemo
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.TextureView
 import android.view.View
 import android.widget.FrameLayout
@@ -29,6 +32,31 @@ class MainActivity : AppCompatActivity() {
             FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         )
         permissioncheck()
+    }
+
+
+
+    fun backgroundPlay(view: View) {
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "当前无权限，请授权", Toast.LENGTH_SHORT)
+            startActivityForResult(
+                Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")),
+                0
+            )
+        } else {
+            startService(Intent(this@MainActivity, FloatService::class.java))
+        }
+    }
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 0) {
+            if (!Settings.canDrawOverlays(this)) {
+                Toast.makeText(this, "授权失败", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "授权成功", Toast.LENGTH_SHORT).show()
+                startService(Intent(this@MainActivity, FloatService::class.java))
+            }
+        }
     }
 
     fun addCameraStream(v: View) {

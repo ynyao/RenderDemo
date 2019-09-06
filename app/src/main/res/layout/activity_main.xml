@@ -20,6 +20,8 @@
     <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             android:id="@+id/cl_navi">
 
         <TextureView
@@ -49,13 +51,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="添加相机预览"
+                android:textSize="10sp"
                 android:id="@+id/btn_add_camera_stream"
                 android:onClick="addCameraStream"
+                app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/local_video_preview"/>
         <Button
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="添加本地流"
+                android:textSize="10sp"
                 android:id="@+id/btn_add_loacl_stream"
                 android:onClick="addLocalStream"
                 app:layout_constraintLeft_toRightOf="@id/btn_add_camera_stream"
@@ -64,9 +69,19 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="切换"
+                android:id="@+id/btn_switch_stream"
+                android:textSize="10sp"
                 android:onClick="switchStream"
                 app:layout_constraintLeft_toRightOf="@id/btn_add_loacl_stream"
                 app:layout_constraintTop_toTopOf="@id/btn_add_loacl_stream"/>
+        <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="后台播放"
+                android:textSize="10sp"
+                android:onClick="backgroundPlay"
+                app:layout_constraintLeft_toRightOf="@id/btn_switch_stream"
+                app:layout_constraintTop_toTopOf="@id/btn_switch_stream"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 

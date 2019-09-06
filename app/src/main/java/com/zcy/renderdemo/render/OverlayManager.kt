@@ -29,7 +29,7 @@ class OverlayManager(private var width: Int, private var height: Int)  {
 
         for(i in 0 until 3) {
             val overlay = Overlay()
-            var bmp=BitmapFactory.decodeResource(App.getContext().resources,R.mipmap.ic_launcher)
+            var bmp=BitmapFactory.decodeResource(App.getContext().resources,R.mipmap.cat)
             overlay.textureId = GlUtil.createImageTexture(bmp)
             overlay.cx = 500f+i*40
             overlay.cy = 500f+i*40
