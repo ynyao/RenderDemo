@@ -99,6 +99,7 @@ class ShareStreamRender(private val renderThread: RenderThread) :
     }
 
     private fun surfaceTextureAvailable(info: SurfaceInfo, sceneId: Int) {
+        mSurfaceDestoryed=false
         initSubScene(info, sceneId)
 //        handler?.sendMessage(handler?.obtainMessage(MSG_DRAW))
     }
@@ -113,7 +114,7 @@ class ShareStreamRender(private val renderThread: RenderThread) :
     }
 
 
-    private fun release() {
+    fun release() {
         mSurfaceDestoryed = true
         subRenderScenes.forEach { _, scene ->
             scene.windowSurface?.release()
@@ -123,6 +124,12 @@ class ShareStreamRender(private val renderThread: RenderThread) :
         subRenderSceneStatus.clear()
     }
 
+    fun pause() {
+        mSurfaceDestoryed = true
+        subRenderScenes.forEach { _, scene ->
+            scene.windowSurface?.release()
+        }
+    }
 
     //    private var startTime = 0L
     fun drawSubScene() {
@@ -140,6 +147,7 @@ class ShareStreamRender(private val renderThread: RenderThread) :
                     scene.windowSurface?.makeCurrent()
 
                     val surfaceInfo = scene.surfaceInfo
+                    Log.d(TAG, "scene: $scene")
                     //                    GLES30.glViewport(0, 0, scene.width, scene.height)
                     GLES30.glClearColor(0.176f, 0.184f, 0.2f, 1.0f)
                     GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
@@ -281,6 +289,9 @@ class ShareStreamRender(private val renderThread: RenderThread) :
 
         val projectionMatrix = FloatArray(16)
         val scenes = ArrayList<StreamTextureInfo>()
+        override fun toString(): String {
+            return "SubRenderScene(id=$id, windowSurface=$windowSurface, surfaceInfo.surface=${surfaceInfo.surface}, scenes=$scenes)"
+        }
     }
 
     inner class SurfaceInfo {

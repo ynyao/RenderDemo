@@ -16,8 +16,8 @@ import java.util.*
 
 class CamManager(renThread: RenderThread) {
 
-    internal var previewWidth = 2160
-    internal var previewHeight = 1080
+    internal var previewWidth = RenderThread.mWindowSurfaceWidth
+    internal var previewHeight = RenderThread.mWindowSurfaceHeight
     internal lateinit var textureView: TextureView
     /**
      * An additional thread for running tasks that shouldn't block the UI.

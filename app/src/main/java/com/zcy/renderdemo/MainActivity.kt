@@ -6,8 +6,10 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.TextureView
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +26,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        director = Director(this)
+        Log.d("_activity_main", "onCreate")
+        director = Director.instance
         director?.setNavi(cl_navi)
         fl_main_preview.addView(
             director?.windowsScene?.getCameraView(),
@@ -44,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 0
             )
         } else {
-            startService(Intent(this@MainActivity, FloatService::class.java))
+            openFloat()
         }
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -54,9 +57,19 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, "授权失败", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "授权成功", Toast.LENGTH_SHORT).show()
-                startService(Intent(this@MainActivity, FloatService::class.java))
+                openFloat()
             }
         }
+    }
+
+    private fun openFloat() {
+        Director.instance.pause()
+        Director.instance.goSmall(true)
+        if(Director.instance.getMainView()?.parent!=null){
+            (Director.instance.getMainView()?.parent as ViewGroup).removeView(Director.instance.getMainView())
+        }
+        startService(Intent(this@MainActivity, FloatService::class.java))
+        finish()
     }
 
     fun addCameraStream(v: View) {

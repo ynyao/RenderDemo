@@ -6,8 +6,8 @@ import com.zcy.renderdemo.gles.*
 
 class SceneRenderUtil {
 
-    private var viewWidth = 1080
-    private var viewHeight = 1920
+    private var viewWidth = RenderThread.mWindowSurfaceWidth
+    private var viewHeight = RenderThread.mWindowSurfaceHeight
 
     private val mainDrawable =
         ScaledDrawable2d(Drawable2d.Prefab.RECTANGLE)
@@ -56,10 +56,10 @@ class SceneRenderUtil {
         val renderItem = RendererItem(textureId, rect, greenFilter, interlace, smooth, similarity, projection)
         if (rect == null) {
             renderItem.rect = RenderRect(
-                viewWidth.toFloat(),
-                viewHeight.toFloat(),
-                (viewWidth / 2).toFloat(),
-                (viewHeight / 2).toFloat()
+                w.toFloat(),
+                h.toFloat(),
+                (w / 2).toFloat(),
+                (h / 2).toFloat()
             )
         }
 
@@ -82,8 +82,9 @@ class SceneRenderUtil {
 
     private fun drawSceneItem(sprite: Sprite2d, scene: RendererItem){
         GlUtil.checkGlError("scene draw start")
+        sprite.rotation = 90f
         sprite.setTexture(scene.textureId)
-        sprite.setScale(scene.rect!!.w, scene.rect!!.h)
+        sprite.setScale(scene.rect!!.h, scene.rect!!.w)
         sprite.setPosition(scene.rect!!.cx, scene.rect!!.cy)
 
 

@@ -2,6 +2,7 @@ package com.zcy.renderdemo.render
 
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
+import android.util.Log
 import android.view.TextureView
 
 /**
@@ -25,6 +26,7 @@ class SceneSurfaceRender(private val render: RenderThread) : TextureView.Surface
     }
 
     override fun onSurfaceTextureAvailable(surface: SurfaceTexture?, width: Int, height: Int) {
+        Log.d("SceneSurfaceRender" ,"onSurfaceTextureAvailable: "+surface.toString())
         render.sendSurfaceAvailable(sceneId,surface,width,height)
     }
 

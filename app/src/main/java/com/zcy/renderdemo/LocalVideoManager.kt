@@ -5,8 +5,8 @@ import com.zcy.renderdemo.render.RenderThread
 
 class LocalVideoManager(renderThread: RenderThread) {
 
-    var previewWidth=2160
-    var previewHeight=1080
+    var previewWidth=RenderThread.mWindowSurfaceWidth
+    var previewHeight=RenderThread.mWindowSurfaceHeight
     var player:LocalPlayer?=null
 
     init {

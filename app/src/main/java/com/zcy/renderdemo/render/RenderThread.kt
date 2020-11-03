@@ -33,18 +33,19 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
 
     private var mOverlayManager: OverlayManager? = null
 
-    var mWindowSurfaceWidth = 1080
-    var mWindowSurfaceHeight = 1920
     var surfaceState=0x00
     var camSurfaceAvailable=0x01
     var subSurfaceAvailable=0x10
 
     fun sendSurfaceAvailable(holder: SurfaceTexture?, width: Int, height: Int) {
+        isPause=false
+        Log.d(TAG,"camSurfaceAvailable" )
         surfaceState = surfaceState or camSurfaceAvailable
         handler?.sendMessage(handler?.obtainMessage(MSG_SURFACE_AVAILABLE, width, height, holder))
     }
 
     fun sendSurfaceAvailable(sceneId:Int,holder: SurfaceTexture?, width: Int, height: Int) {
+        Log.d(TAG, "subSurfaceAvailable")
         surfaceState = surfaceState or subSurfaceAvailable
         handler?.sendMessage(handler?.obtainMessage(MSG_SUB_SURFACE_AVAILABLE, width, height, holder))
         if(surfaceState== 0x11)
@@ -81,12 +82,15 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
                     MSG_OPEN_CAM ->CamManager(this@RenderThread)
                     MSG_OPEN_LOCAL_STREAM -> LocalVideoManager(this@RenderThread)
                     MSG_REDRAW -> {
+                        Log.d(TAG,"MSG_REDRAW")
+                        if(isPause) return
+                        if(surfaceState != 0x11) return
                         val current = System.currentTimeMillis()
                         if (current - startTime >= 1 * 1000) {
                             startTime = current
                         }
                         draw(System.currentTimeMillis())
-                        subSceneRender?.drawSubScene()
+                        if(!isSmall) subSceneRender?.drawSubScene()
 
                         sendEmptyMessageDelayed(MSG_REDRAW, drawInternal)
                     }
@@ -98,8 +102,6 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
         mEglCore = EglCore(null, EglCore.FLAG_RECORDABLE)
         mEglCore?.makeCurrent(null, null)
         mTextureRender = TextureRender()
-        mOverlayManager = OverlayManager(mWindowSurfaceWidth, mWindowSurfaceHeight)
-        mainFrameBuffer = GlUtil.prepareFrameBuffer(1080, 2160)
 
         mainDisplay= MainDisplay()
         mainDisplay?.prepareGl()
@@ -149,7 +151,7 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
         GLES30.glClearColor(0.176f, 0.184f, 0.2f, 1.0f)
         GLES30.glClear(GLES30.GL_COLOR_BUFFER_BIT)
         mainDisplay?.drawStreamScene(mWindowSurfaceWidth, mWindowSurfaceHeight, currentStream, null, false, 0f, 0f, mDisplayProjectionMatrix, true)
-        drawExtra()
+//        drawExtra()
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0)
     }
 
@@ -165,6 +167,12 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
      * Handles the surface-created previewCallback from SurfaceView.  Prepares GLES and the Surface.
      */
     private fun surfaceAvailable(surfaceTexture: SurfaceTexture?, width: Int, height: Int) {
+        mWindowSurfaceWidth =  width
+        mWindowSurfaceHeight = height
+        Log.i(TAG, "width:$width height:$height")
+
+        mOverlayManager = OverlayManager(mWindowSurfaceWidth, mWindowSurfaceHeight)
+        mainFrameBuffer = GlUtil.prepareFrameBuffer(mWindowSurfaceWidth,mWindowSurfaceHeight)
 
         if (mWindowSurface != null) {
             mWindowSurface?.release()
@@ -172,9 +180,6 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
         mWindowSurface = WindowSurface(mEglCore!!, surfaceTexture!!)
         mWindowSurface!!.makeCurrent()
 
-        mWindowSurfaceWidth = 1080 //width//width/3*4
-        mWindowSurfaceHeight =1810 //height
-        Log.i(TAG, "width:$mWindowSurfaceWidth height:$mWindowSurfaceHeight")
 
         GLES30.glViewport(0, 0, mWindowSurfaceWidth, mWindowSurfaceHeight)
 
@@ -191,6 +196,8 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
 
     companion object {
         public val TAG = "RenderThread"
+        var mWindowSurfaceWidth = 1080
+        var mWindowSurfaceHeight = 720
         // Messages
         private val MSG_SURFACE_AVAILABLE = 0
         private val MSG_SUB_SURFACE_AVAILABLE = 1
@@ -242,6 +249,21 @@ class RenderThread(mediator: Mediator) : HandlerThread("RenderThread") {
         handler?.sendMessage(handler?.obtainMessage(MSG_OPEN_LOCAL_STREAM))
         streamList?.add(1)
         currentStream=1
+    }
+
+    var isPause=false
+    fun sendPause() {
+        isPause=true
+        Log.d(TAG,"sendPause")
+    }
+
+    var isSmall=false
+    fun goSmallScreen(small: Boolean) {
+        subSceneRender?.pause()
+        isSmall=small
+        if(!isSmall){
+            surfaceState=0
+        }
     }
 
 
